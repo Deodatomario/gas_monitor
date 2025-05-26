@@ -1662,6 +1662,8 @@
         let isProcessingQueue = false;
         let flameStartTime = 0;
         let totalFlameTimeToday = 0;
+        let isValveOpen = false;
+        let connectionType = 'desconectado';
 
         // Elementos DOM
         const loginScreen = document.getElementById('loginScreen');
@@ -1670,6 +1672,10 @@
         const userDropdown = document.getElementById('userDropdown');
         const userName = document.getElementById('userName');
         const userEmail = document.getElementById('userEmail');
+        const connectionStatus = document.getElementById('connectionStatus');
+        // No início do seu código, após o DOM estar carregado
+        const valveControlBtn = document.getElementById('valveControlBtn');
+        const valveStatusText = document.getElementById('valveStatusText');
         const connectionStatus = document.getElementById('connectionStatus');
         const gasValueElement = document.getElementById('gasValue');
         const gasStatus = document.getElementById('gasStatus');
@@ -1814,6 +1820,46 @@
                 showLoginScreen();
             }
         }
+        /**
+ * Atualiza a interface do usuário com o estado da válvula
+ * @param {boolean} state - true para válvula aberta, false para fechada
+ */
+function updateValveUI(state) {
+    isValveOpen = state;
+    if (valveControlBtn) {
+        if (state) {
+            valveControlBtn.className = "btn-valve btn-valve-open";
+            valveControlBtn.textContent = "Fechar Válvula";
+            if (valveStatusText) valveStatusText.textContent = "Válvula aberta - Gás fluindo";
+        } else {
+            valveControlBtn.className = "btn-valve btn-valve-closed";
+            valveControlBtn.textContent = "Abrir Válvula";
+            if (valveStatusText) valveStatusText.textContent = "Válvula fechada - Gás bloqueado";
+        }
+    }
+}
+
+/**
+ * Atualiza o status da conexão na interface
+ * @param {boolean} connected - true para conectado, false para desconectado
+ */
+function updateConnectionStatus(connected) {
+    if (!connectionStatus) return;
+
+    if (connected) {
+        connectionStatus.className = "connection-status status-connected";
+        connectionStatus.querySelector('span').textContent = `Conectado via ${connectionType}`;
+        if (connectionStatus.querySelector('.status-indicator')) {
+            connectionStatus.querySelector('.status-indicator').className = "status-indicator indicator-connected";
+        }
+    } else {
+        connectionStatus.className = "connection-status status-disconnected";
+        connectionStatus.querySelector('span').textContent = "Dispositivo desconectado";
+        if (connectionStatus.querySelector('.status-indicator')) {
+            connectionStatus.querySelector('.status-indicator').className = "status-indicator indicator-disconnected";
+        }
+    }
+}
 
         // Inicializa conexão em tempo real
         async function initRealtimeConnection() {
@@ -1868,7 +1914,7 @@
                 
                 // Busca configurações do dispositivo no Supabase
                 const { data: settings, error } = await supabase
-                    .from('device_settings')
+                    .from('devices')
                     .select('*')
                     .eq('device_id', deviceId)
                     .single();
